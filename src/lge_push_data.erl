@@ -171,8 +171,7 @@ payload(Fcnt) ->
     P = << (16#53 bxor S0), (16#01 bxor S1), (1 bxor S2), (0 bxor S3),
            (0 bxor S4), (0 bxor S5), (16#00 bxor S6), (16#5A bxor S7) >>,
     Q = << 128, DevAddr:32/little-unsigned-integer, 128, Fcnt:16/little-unsigned-integer, 8, P/binary >>,
-    B0 = << 16#49, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer, Fcnt:32/little-unsigned-integer, 0, (byte_size(Q)) >>,
-    MIC = erlang:binary_part(crypto:cmac(aes_cbc128, NetwkSKey, << B0 /binary, Q/binary>>), 0, 4),
+    MIC = lge_crypto:mic_up(Q, DevAddr, Fcnt, NetwkSKey),
     base64:encode_to_string(<<Q/binary, MIC/binary>>).
 
 get_json(Fcnt) ->
