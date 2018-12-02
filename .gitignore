@@ -1,0 +1,9 @@
+_build
+erl_crash.dump
+local.config
+rebar3.crashdump
+rebar.lock
+doc/edoc-info
+doc/*.css
+doc/*.html
+doc/*.png
