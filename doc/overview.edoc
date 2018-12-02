@@ -1,0 +1,9 @@
+** Overview file for the LoRaWAN Gateway Emulator **
+
+@copyright 2018, Heinrich Schuchardt <xypron.glpk@gmx.de>
+@version 1.0.0
+@title Welcome to the LoRaWAN Gateway Emulator
+@doc
+The `LoRaWAN Gateway Emulator' uses the Semtech packet forwarder protocol
+to communicate to a LoRaWAN server.
+@end
