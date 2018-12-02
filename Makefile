@@ -6,7 +6,7 @@ build:
 	rebar3 compile
 
 run:	release
-	erl -noshell -s lge_app -sname lge -config lge.config \
+	erl -noshell -s lge_app -sname lge -config local.config \
 	    -pa _build/default/rel/lorawan-gateway-emulator/lib/*/ebin/
 
 shell:	release
