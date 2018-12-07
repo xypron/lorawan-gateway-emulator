@@ -177,19 +177,19 @@ get_json(Fcnt) ->
     jsx:encode(
         #{
             rxpk => [ #{
-                time => list_to_atom(time_stamp(T)),
-                tmst => time_stamp32(T),
-                chan => 0,
-                rfch => 0,
-                freq => 868.1,
-                stat => 1,
-                modu => list_to_atom("LORA"),
-                datr => list_to_atom("SF7BW125"),
-                codr => list_to_atom("4/5"),
-                rssi => -35,
-                lsnr => 5.1,
-                size => 21,
-                data => list_to_atom(payload(Fcnt))
+                <<"time">> => list_to_binary(time_stamp(T)),
+                <<"tmst">> => time_stamp32(T),
+                <<"chan">> => 0,
+                <<"rfch">> => 0,
+                <<"freq">> => 868.1,
+                <<"stat">> => 1,
+                <<"modu">> => <<"LORA">>,
+                <<"datr">> => <<"SF7BW125">>,
+                <<"codr">> => <<"4/5">>,
+                <<"rssi">> => -35,
+                <<"lsnr">> => 5.1,
+                <<"size">> => 21,
+                <<"data">> => list_to_binary(payload(Fcnt))
             } ]
         }
     ).
@@ -209,16 +209,16 @@ do_stat(State) ->
     Json = jsx:encode(
         #{
             stat => #{
-                time => list_to_atom(Ts),
-                lati => 51,
-                long => 7,
-                alti => 40,
-                rxnb => Rxfw,
-                rxok => Rxfw,
-                rxfw => Rxfw,
-                ackr => 100.0,
-                dwnb => Dwnb,
-                txnb => Dwnb
+                <<"time">> => list_to_binary(Ts),
+                <<"lati">> => 51,
+                <<"long">> => 7,
+                <<"alti">> => 40,
+                <<"rxnb">> => Rxfw,
+                <<"rxok">> => Rxfw,
+                <<"rxfw">> => Rxfw,
+                <<"ackr">> => 100.0,
+                <<"dwnb">> => Dwnb,
+                <<"txnb">> => Dwnb
             }
         }
     ),
