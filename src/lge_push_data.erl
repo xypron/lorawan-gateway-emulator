@@ -165,12 +165,10 @@ payload(Fcnt) ->
     {ok, DevAddr} = application:get_env(lge, devaddr),
     {ok, AppSKey} = application:get_env(lge, appskey),
     {ok, NetwkSKey} = application:get_env(lge, netwkskey),
-    A1 = << 1, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer, Fcnt:32/little-unsigned-integer, 0, 1 >>,
-    S = crypto:block_encrypt(aes_ecb, AppSKey, A1),
-    << S0, S1, S2, S3, S4, S5, S6, S7, _/binary>> = S,
-    P = << (16#53 bxor S0), (16#01 bxor S1), (1 bxor S2), (0 bxor S3),
-           (0 bxor S4), (0 bxor S5), (16#00 bxor S6), (16#5A bxor S7) >>,
-    Q = << 128, DevAddr:32/little-unsigned-integer, 128, Fcnt:16/little-unsigned-integer, 8, P/binary >>,
+    Msg = <<16#53, 16#01, 1, 0, 0, 0, 16#00, 16#5A>>,
+    P = lge_crypto:encrypt_up(Msg, DevAddr, Fcnt, AppSKey),
+    Q = << 128, DevAddr:32/little-unsigned-integer, 128,
+           Fcnt:16/little-unsigned-integer, 8, P/binary >>,
     MIC = lge_crypto:mic_up(Q, DevAddr, Fcnt, NetwkSKey),
     base64:encode_to_string(<<Q/binary, MIC/binary>>).
 
