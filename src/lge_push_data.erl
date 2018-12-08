@@ -92,11 +92,17 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({resp, _Msg}, State) ->
-    % << _:8, Token:16, _/binary>> = Msg,
+handle_cast({resp, <<_:8, Token:16, 3:8, Msg/binary>>}, State) ->
     % send TX_ACK
     % gen_server:cast(lge_udp, {send, <<2, Token:16, 5,
     %                           "{\"txpk_ack\":{\"error\":\"NONE\"}}" >>}),
+    P = jsx:decode(Msg, [return_maps]),
+    case maps:get(<<"txpk">>, P) of
+        undefined ->
+            ok;
+        Txpk ->
+            io:format("Data: ~p~n", [base64:decode(maps:get(<<"data">>, Txpk))])
+    end,
     % schedule PUSH_DATA(stat)
     Dwnb = maps:get(dwnb, State, 0),
     erlang:send_after(2500, self(), stat),
@@ -167,8 +173,9 @@ payload(Fcnt) ->
     {ok, NetwkSKey} = application:get_env(lge, netwkskey),
     Msg = <<16#53, 16#01, 1, 0, 0, 0, 16#00, 16#5A>>,
     P = lge_crypto:encrypt_up(Msg, DevAddr, Fcnt, AppSKey),
-    Q = << 128, DevAddr:32/little-unsigned-integer, 128,
-           Fcnt:16/little-unsigned-integer, 8, P/binary >>,
+    % Sending "confirmed message up", the receiver must send aknowledgement.
+    Q = <<128, DevAddr:32/little-unsigned-integer, 128,
+          Fcnt:16/little-unsigned-integer, 8, P/binary>>,
     MIC = lge_crypto:mic_up(Q, DevAddr, Fcnt, NetwkSKey),
     base64:encode_to_string(<<Q/binary, MIC/binary>>).
 
