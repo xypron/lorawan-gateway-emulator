@@ -44,17 +44,9 @@ start() ->
 %% @end
 %%--------------------------------------------------------------------
 start(_StartType, _StartArgs) ->
-    case check_otp_release(19) of
-        ok ->
-            case lge_sup:start_link() of
-                {ok, Pid} ->
-                    {ok, Pid};
-                Error ->
-                    Error
-            end;
-        Error ->
-            Error
-    end.
+    ok = check_otp_release(19),
+    ok = lge_db:create_tables(),
+    lge_sup:start_link().
 
 %%--------------------------------------------------------------------
 %% @private
