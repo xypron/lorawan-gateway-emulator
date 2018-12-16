@@ -30,7 +30,7 @@
 
 %%--------------------------------------------------------------------
 %% @doc
-%% Starts the comand line server.
+%% Starts the command line server.
 %%
 %% @spec start_link() -> {ok, Pid} | ignore | {error, Error}
 %% @end

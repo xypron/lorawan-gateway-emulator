@@ -101,7 +101,7 @@ handle_cast({send, Msg}, State) ->
         5 ->
             lge_log:debug("<- TX_ACK~n");
         _ELSE ->
-            lge_log:debug("<- Unknow message type ~p~n", [Type])
+            lge_log:debug("<- Unknown message type ~p~n", [Type])
     end,
     Socket = maps:get(socket, State),
     Ip = lge_util:get_ip(),
@@ -136,11 +136,11 @@ handle_info({udp, _Socket, _Ip, _Port, Msg}, State) ->
         4 ->
             lge_log:debug("-> PULL_ACK~n");
         _ELSE ->
-            lge_log:debug("-> Unknow message type ~p~n", [Type])
+            lge_log:debug("-> Unknown message type ~p~n", [Type])
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    lge_log:debug("unknown info ~p", [Info]),
+    lge_log:debug("Unknown info ~p", [Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
