@@ -15,12 +15,8 @@
 -export([start_link/0]).
 
 %% gen_server callbacks
--export([init/1,
-         handle_call/3,
-         handle_cast/2,
-         handle_info/2,
-         terminate/2,
-         code_change/3]).
+-export([code_change/3, handle_call/3, handle_cast/2,
+         handle_info/2, init/1, terminate/2]).
 
 -include("lge_db.hrl").
 
@@ -128,18 +124,27 @@ terminate(_Reason, _State) ->
 %% @end
 %%--------------------------------------------------------------------
 code_change(_OldVsn, State, _Extra) ->
-        {ok, State}.
+    {ok, State}.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
+get_devaddr(Fieldname) ->
+    get_bin(Fieldname, 32).
+
 get_eui(Fieldname) ->
-    Value = list_to_binary(
-                string:to_upper(string:trim(io:get_line(Fieldname ++ ": ")))),
+    get_bin(Fieldname, 64).
+
+get_skey(Fieldname) ->
+    get_bin(Fieldname, 128).
+
+get_bin(Fieldname, Len) ->
+    Value = list_to_binary(string:to_upper(string:trim(io:get_line(Fieldname ++
+                                                       " (hex string): ")))),
     Hex = lge_util:hex_to_binary(Value),
     case bit_size(Hex) of
-        64 ->
+        Len ->
             {ok, Hex};
         _else ->
             {error}
@@ -148,8 +153,7 @@ get_eui(Fieldname) ->
 get_ip(Fieldname) ->
     Value = list_to_binary(string:trim(io:get_line(Fieldname ++ ": "))),
     List = string:split(Value, ".", all),
-    Tuple = lists:foldl(
-        fun(T, Acc) ->
+    Tuple = lists:foldl(fun (T, Acc) ->
             erlang:append_element(Acc, list_to_integer(binary_to_list(T)))
         end, {}, List),
     case size(Tuple) of
@@ -162,9 +166,8 @@ get_ip(Fieldname) ->
 get_port(Fieldname) ->
     Value = list_to_binary(string:trim(io:get_line(Fieldname ++ ": "))),
     Port = list_to_integer(binary_to_list(Value)),
-    if
-        (Port > 0) and (Port =< 16#FFFF) ->
-            {ok, Port};
+    if (Port > 0) and (Port =< 65535) ->
+        {ok, Port};
         true ->
             {error}
     end.
@@ -180,60 +183,91 @@ get_string(Fieldname) ->
 
 create([Keyword | _Arguments]) ->
     case Keyword of
-    "gateway" ->
-        try
-            {ok, Eui} = get_eui("EUI-64"),
-            {ok, Name} = get_string("Name"),
-            {ok, Server} = get_string("Server"),
-            Gateway = #gateway{eui = Eui, name = Name, server = Server},
-            F = fun() ->
-                case mnesia:read({server, Server}) of
-                    [] ->
-                        io:format("Server ~p does not exist~n", [Server]),
-                        {error, unknown_server};
-                    _else ->
-                        mnesia:write(Gateway)
+        "gateway" ->
+            try
+                {ok, Eui} = get_eui("EUI-64"),
+                {ok, Name} = get_string("Name"),
+                {ok, Server} = get_string("Server"),
+                Gateway = #gateway{eui = Eui, name = Name, server = Server},
+                F = fun () ->
+                    case mnesia:read({server, Server}) of
+                        [] ->
+                            io:format("Server ~p does not exist~n", [Server]),
+                            {error, unknown_server};
+                        _else ->
+                            mnesia:write(Gateway)
+                        end
+                     end,
+                case mnesia:activity(transaction, F) of
+                    ok -> io:format("Gateway ~p created~n", [Name]);
+                    _else -> io:format("Failed to create gateway~n")
                 end
+            catch
+                _ -> io:format("Invalid input~n")
             end,
-            case mnesia:activity(transaction, F) of
-                ok ->
-                    io:format("Gateway ~p created~n", [Name]);
-                _else ->
-                    io:format("Failed to create gateway~n")
-            end
-        catch
-            _ -> io:format("Invalid input~n")
-        end,
-        ok;
-    "server" ->
-        try
-            {ok, Name} = get_string("Name"),
-            {ok, Ip} = get_ip("Ip address"),
-            {ok, Port} = get_port("Port"),
-            Server = #server{name = Name, ip = Ip, port = Port},
-            F = fun() ->
-                mnesia:write(Server)
+            ok;
+        "server" ->
+            try
+                {ok, Name} = get_string("Name"),
+                {ok, Ip} = get_ip("Ip address"),
+                {ok, Port} = get_port("Port"),
+                Server = #server{name = Name, ip = Ip, port = Port},
+                F = fun () -> mnesia:write(Server) end,
+                case mnesia:activity(transaction, F) of
+                    ok ->
+                        io:format("Server ~p created~n", [Name]);
+                    _else ->
+                        io:format("Failed to create server~n")
+                end
+            catch
+                _ -> io:format("Invalid input~n")
             end,
-            case mnesia:activity(transaction, F) of
-                ok ->
-                    io:format("Server ~p created~n", [Name]);
-                _else ->
-                    io:format("Failed to create server~n")
-            end
-        catch
-            _ -> io:format("Invalid input~n")
-        end,
-        ok;
-    "otaa" -> ok;
-    "device" -> ok;
-        _else -> help(["create"])
+            ok;
+        "otaa" ->
+            try
+                {ok, Eui} = get_eui("EUI-64"),
+                {ok, AppKey} = get_skey("AppKey"),
+                Otaa = #otaa{deveui = Eui, appkey = AppKey, device = undefined},
+                F = fun () -> mnesia:write(Otaa) end,
+                case mnesia:activity(transaction, F) of
+                    ok ->
+                        io:format("OTAA device ~p created~n", [Eui]);
+                    _else ->
+                        io:format("Failed to create OTAA device~n")
+                end
+            catch
+                _ ->
+                    io:format("Invalid input~n")
+            end,
+            ok;
+        "device" ->
+            try
+                {ok, DevAddr} = get_devaddr("DevAddr"),
+                {ok, AppSKey} = get_skey("AppSKey"),
+                {ok, NetwkSKey} = get_skey("NetwkSKey"),
+                Device = #device{devaddr = DevAddr, appskey = AppSKey,
+                                 netwkskey = NetwkSKey, fcntup = 0,
+                                 fcntdown = 0},
+                F = fun () -> mnesia:write(Device) end,
+                case mnesia:activity(transaction, F) of
+                    ok ->
+                        io:format("Device device ~p created~n", [DevAddr]);
+                    _else ->
+                        io:format("Failed to create device~n")
+                end
+            catch
+                _ -> io:format("Invalid input~n")
+            end,
+            ok;
+        _else ->
+            help(["create"])
     end,
     ok.
 
-delete([Keyword | _Arguments]) ->
+delete([_Keyword | _Arguments]) ->
     ok.
 
-list([Keyword | _Arguments]) ->
+list([_Keyword | _Arguments]) ->
     ok.
 
 %%--------------------------------------------------------------------
@@ -257,35 +291,31 @@ greet() ->
 %% @end
 %%--------------------------------------------------------------------
 help([]) ->
-    io:format(
-        "create - create item~n" ++
-        "delete - delete item~n" ++
-        "help - display this help~n" ++
-        "list - list items~n" ++
-        "quit - exit the program~n" ++
-        "troff - stop trace output~n" ++
-        "tron - start trace output~n"),
+    io:format("create - create item~n" ++
+              "delete - delete item~n" ++
+              "help - display this help~n" ++
+              "list - list items~n" ++
+              "quit - exit the program~n" ++
+              "troff - stop trace output~n" ++
+              "tron - start trace output~n"),
     ok;
 help([Keyword | _Arguments]) ->
     case Keyword of
         "create" ->
-            io:format(
-                "create gateway~n" ++
-                "create server~n" ++
-                "create otaa~n" ++
-                "create device~n");
+            io:format("create gateway~n" ++
+                      "create server~n" ++
+                      "create otaa~n" ++
+                      "create device~n");
         "delete" ->
-            io:format(
-                "delete gateway~n" ++
-                "delete server~n" ++
-                "delete otaa~n" ++
-                "delete device~n");
+            io:format("delete gateway~n" ++
+                      "delete server~n" ++
+                      "delete otaa~n" ++
+                      "delete device~n");
         "list" ->
-            io:format(
-                "list gateways~n" ++
-                "list servers~n" ++
-                "list otaas~n" ++
-                "list devices~n");
+            io:format("list gateways~n" ++
+                      "list servers~n" ++
+                      "list otaas~n" ++
+                      "list devices~n");
         _else ->
             help([])
     end,
