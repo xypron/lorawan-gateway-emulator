@@ -60,6 +60,11 @@ init([]) ->
           shutdown => brutal_kill,
           modules => [lge_cmdline]}
           ,
+        #{id => lge_log,
+          start => {lge_log, start_link, []},
+          shutdown => brutal_kill,
+          modules => [lge_log]}
+          ,
         #{id => lge_pull_data,
           start => {lge_pull_data, start_link, []},
           shutdown => brutal_kill,

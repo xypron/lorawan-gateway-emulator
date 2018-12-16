@@ -101,7 +101,7 @@ handle_cast({resp, <<_:8, Token:16, 3:8, Msg/binary>>}, State) ->
         undefined ->
             ok;
         Txpk ->
-            io:format("Data: ~p~n", [base64:decode(maps:get(<<"data">>, Txpk))])
+            lge_log:debug("Data: ~p~n", [base64:decode(maps:get(<<"data">>, Txpk))])
     end,
     % schedule PUSH_DATA(stat)
     Dwnb = maps:get(dwnb, State, 0),

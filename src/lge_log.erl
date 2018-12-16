@@ -3,16 +3,16 @@
 %%% @author Heinrich Schuchardt <xypron.glpk@gmx.de>
 %%% @copyright (C) 2018, Heinrich Schuchardt <xypron.glpk@gmx.de>
 %%% @doc
-%%% This server waits for command line input
+%%% This server provides the command line interface.
 %%%
 %%% @end
 %%%-------------------------------------------------------------------
--module(lge_cmdline).
+-module(lge_log).
 
 -behaviour(gen_server).
 
 %% API
--export([start_link/0]).
+-export([start_link/0, debug/1, debug/2]).
 
 %% gen_server callbacks
 -export([init/1,
@@ -54,9 +54,7 @@ start_link() ->
 %% @end
 %%--------------------------------------------------------------------
 init([]) ->
-    greet(),
-    gen_server:cast(self(), start),
-    {ok, []}.
+    {ok, troff}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -72,9 +70,13 @@ init([]) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
+handle_call(troff, _From, State) ->
+    {reply, State, troff};
+handle_call(tron, _From, State) ->
+    {reply, State, tron};
 handle_call(_Request, _From, State) ->
-    Reply = ok,
-    {reply, Reply, State}.
+    io:format("?~n"),
+    {reply, ok, State}.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -86,10 +88,16 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast(start, State) ->
-    command_line(),
+handle_cast({debug, Msg}, State) ->
+    case State of
+        tron ->
+            io:format(Msg);
+        _else ->
+            ok
+    end,
     {noreply, State};
-handle_cast(_Msg, State) ->
+handle_cast(Msg, State) ->
+    io:format("handle_cast(~w,_)~n", [Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -102,7 +110,7 @@ handle_cast(_Msg, State) ->
 %%                                   {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_info(_Info, State) ->
+handle_info(Info, State) ->
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -128,41 +136,20 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
         {ok, State}.
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Print debug message.
+%%
+%% @spec debug(Format, Data) -> ok
+%% @end
+%%--------------------------------------------------------------------
+debug(Format) ->
+    debug(Format, []).
+debug(Format, Data) ->
+    Msg = io_lib:format(Format, Data),
+    gen_server:cast(lge_log, {debug, Msg}).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Write welcome message.
-%%
-%% @spec greet() -> ok
-%% @end
-%%--------------------------------------------------------------------
-greet() ->
-    io:format("~s~n", ["'stop' to exit"]),
-    ok.
-
-%%--------------------------------------------------------------------
-%% @private
-%% @doc
-%% Handle entry on command line.
-%%
-%% @spec command_line() -> ok
-%% @end
-%%--------------------------------------------------------------------
-command_line() ->
-    L = string:trim(io:get_line("> ")),
-    case L of
-        "stop" ->
-            io:format("stopping~n"),
-            init:stop();
-        "troff" ->
-            gen_server:call(lge_log, troff);
-        "tron" ->
-            gen_server:call(lge_log, tron);
-        _else ->
-            io:format("~s '~s'~n", ["syntax error:", L])
-    end,
-    command_line().
