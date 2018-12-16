@@ -35,6 +35,11 @@ Run the emulator with the following command
 
 Type *stop* to exit the program.
 
+The emulator sends PULL\_DATA requests every two seconds.
+
+Every few seconds it sends a PUSH\_DATA message emulating an RAK LB801N
+button with button 1 pressed (hexadecimal string 53 01 01 00 00 00 00 5A).
+
 ## License
 
 This program is licensed according to the MIT license. See the accompanying
