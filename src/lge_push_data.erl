@@ -92,7 +92,7 @@ handle_call(_Request, _From, State) ->
 %%                                  {stop, Reason, State}
 %% @end
 %%--------------------------------------------------------------------
-handle_cast({resp, <<_:8, Token:16, 3:8, Msg/binary>>}, State) ->
+handle_cast({resp, <<_:8, _Token:16, 3:8, Msg/binary>>}, State) ->
     % send TX_ACK
     % gen_server:cast(lge_udp, {send, <<2, Token:16, 5,
     %                           "{\"txpk_ack\":{\"error\":\"NONE\"}}" >>}),
