@@ -43,7 +43,7 @@
 %% @type
 %% otaa() = #otaa{deveui = eui64(),
 %%                appkey = skey(),
-%%                device = devaddr()
+%%                device = devaddr() | undefined
 %%            }.
 %% A device that can be connected via OTAA.
 %% @end
@@ -51,7 +51,7 @@
 -record(otaa, {
         deveui :: eui64(),
         appkey :: skey(),
-        device :: devaddr()
+        device :: devaddr() | undefined
     }).
 
 %%--------------------------------------------------------------------
