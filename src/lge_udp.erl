@@ -174,7 +174,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 openSocket() ->
-    case gen_udp:open(1681, [binary]) of
+    case gen_udp:open(0, [binary]) of
         {ok, Socket} -> Socket;
         {error, Reason} -> error(Reason)
     end.
