@@ -10,7 +10,7 @@
 -module(lge_util).
 
 %% API
--export([get_ip/0, get_mac/0, rand16/0]).
+-export([get_ip/0, get_mac/0, hex_to_binary/1, rand16/0]).
 
 %%%===================================================================
 %%% API
@@ -66,8 +66,37 @@ get_mac() ->
 rand16() ->
     round(65536 * rand:uniform()) band 65535.
 
+%%--------------------------------------------------------------------
+%% @doc
+%% Convert hexadecimal string to binary.
+%%
+%% @spec hex_to_binary(Hex) -> binary.
+%% @end
+%%--------------------------------------------------------------------
+hex_to_binary(Hex) ->
+    hex_to_binary(Hex, <<>>).
+
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Convert hexadecimal string to binary.
+%%
+%% @spec hex_to_binary(Hex, <<>>) -> binary.
+%% @end
+%%--------------------------------------------------------------------
+hex_to_binary(<<>>, Acc) ->
+    Acc;
+hex_to_binary(<<H:8, T/binary>>, Acc) ->
+    if
+        (H >= $0) and (H =< $9) ->
+            N = <<(H - $0):4>>;
+        (H >= $A) and (H =< $F) ->
+            N = <<(H - $7):4>>;
+        true ->
+            N = <<>>
+    end,
+    hex_to_binary(<<T/binary>>, <<Acc/bitstring, N/bitstring>>).
