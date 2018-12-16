@@ -13,7 +13,10 @@ shell:	release
 	rebar3 shell
 
 clean:
-	rm -rf _build erl_crash.dump rebar_lock
+	rm -rf _build erl_crash.dump rebar3.crashdump rebar.lock doc/*
+
+distclean: clean
+	rm -rf Mnesia* local.config
 
 .PHONY: doc
 doc:
