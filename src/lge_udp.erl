@@ -6,7 +6,6 @@
 %%% This server handles UDP messages.
 %%%
 %%% @end
-%%% Created : 2018-11-25 13:05:01.521613
 %%%-------------------------------------------------------------------
 -module(lge_udp).
 
@@ -94,15 +93,15 @@ handle_cast({send, Msg}, State) ->
     case Type of
         % PUSH_DATA
         0 ->
-            io:format("<- PUSH_DATA~n");
+            lge_log:debug("<- PUSH_DATA~n");
         % PULL_DATA
         2 ->
-            io:format("<- PULL_DATA~n");
+            lge_log:debug("<- PULL_DATA~n");
         % TX_ACK
         5 ->
-            io:format("<- TX_ACK~n");
+            lge_log:debug("<- TX_ACK~n");
         _ELSE ->
-            io:format("<- Unknow message type ~p~n", [Type])
+            lge_log:debug("<- Unknow message type ~p~n", [Type])
     end,
     Socket = maps:get(socket, State),
     Ip = lge_util:get_ip(),
@@ -110,7 +109,7 @@ handle_cast({send, Msg}, State) ->
     gen_udp:send(Socket, Ip, Port, Msg),
     {noreply, State};
 handle_cast(Msg, State) ->
-    io:format("unknown cast ~p", [Msg]),
+    lge_log:debug("unknown cast ~p", [Msg]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
@@ -128,20 +127,20 @@ handle_info({udp, _Socket, _Ip, _Port, Msg}, State) ->
     case Type of
         % PUSH_ACK
         1 ->
-            io:format("-> PUSH_ACK~n");
+            lge_log:debug("-> PUSH_ACK~n");
         % PULL_RESP
         3 ->
-            io:format("-> PULL_RESP~n"),
+            lge_log:debug("-> PULL_RESP~n"),
             gen_server:cast(lge_push_data, {resp, Msg});
         % PULL_ACK
         4 ->
-            io:format("-> PULL_ACK~n");
+            lge_log:debug("-> PULL_ACK~n");
         _ELSE ->
-            io:format("-> Unknow message type ~p~n", [Type])
+            lge_log:debug("-> Unknow message type ~p~n", [Type])
     end,
     {noreply, State};
 handle_info(Info, State) ->
-    io:format("unknown info ~p", [Info]),
+    lge_log:debug("unknown info ~p", [Info]),
     {noreply, State}.
 
 %%--------------------------------------------------------------------
