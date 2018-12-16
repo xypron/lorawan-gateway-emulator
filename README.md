@@ -16,11 +16,24 @@ Build with command
 
 Copy local.config.template to local.config and fill in the relevant data.
 
+## Configuration
+
+Copy *local.config.template* to *local.config*. Edit *local.config*.
+
+* mac - Gateway EUI-64
+* devadaddr - 32 bit device address
+* appskey - application session key used to encrypt messages
+* netwkskey - network session key used to sign and encrypt messages
+* ip - IP address of the LoRaWAN server
+* port - UDP port of the LoRaWAN server
+
 ## Running the emulator
 
 Run the emulator with the following command
 
     make run
+
+Type *stop* to exit the program.
 
 ## License
 
