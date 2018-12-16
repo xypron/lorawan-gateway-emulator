@@ -13,8 +13,9 @@
 
 -export([encrypt_up/4, mic_up/4, xor_bin/2]).
 
--type session_key() :: [<< _:128 >>].
--type message_integrity_code() :: [<< _:32 >>].
+-type session_key() :: [<<_:128>>].
+
+-type message_integrity_code() :: [<<_:32>>].
 
 -export_type([session_key/0, message_integrity_code/0]).
 
@@ -27,11 +28,10 @@
 %% @end
 %%--------------------------------------------------------------------
 mic_up(Msg, DevAddr, Fcnt, NetwkSKey) ->
-    B0 = << 16#49, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer,
-         Fcnt:32/little-unsigned-integer, 0, (byte_size(Msg)) >>,
+    B0 = <<73, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer,
+           Fcnt:32/little-unsigned-integer, 0, (byte_size(Msg))>>,
     erlang:binary_part(crypto:cmac(aes_cbc128, NetwkSKey,
-                       << B0 /binary, Msg/binary>>), 0, 4).
-
+                       <<B0/binary, Msg/binary>>), 0, 4).
 
 %%--------------------------------------------------------------------
 %% @doc
@@ -42,6 +42,7 @@ mic_up(Msg, DevAddr, Fcnt, NetwkSKey) ->
 %%--------------------------------------------------------------------
 xor_bin(S1, S2) ->
     xor_bin(S1, S2, <<>>).
+
 xor_bin(<<>>, _S2, Acc) ->
     Acc;
 xor_bin(<<H1:8, T1/binary>>, <<H2:8, T2/binary>>, Acc) ->
@@ -72,8 +73,8 @@ encrypt_up(Msg, DevAddr, Fcnt, AppSKey) ->
 encoding_up(0, _Pkg, _DevAddr, _Fcnt, _AppSKey, <<Acc/binary>>) ->
     Acc;
 encoding_up(Count, Pkg, DevAddr, Fcnt, AppSKey, <<Acc/binary>>) ->
-    A = << 1, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer,
-        Fcnt:32/little-unsigned-integer, 0, Pkg >>,
+    A = <<1, 0, 0, 0, 0, 0, DevAddr:32/little-unsigned-integer,
+          Fcnt:32/little-unsigned-integer, 0, Pkg>>,
     S = crypto:block_encrypt(aes_ecb, AppSKey, A),
     encoding_up(Count - 1, Pkg + 1, DevAddr, Fcnt, AppSKey,
                 <<Acc/binary, S/binary>>).

@@ -76,5 +76,5 @@ stop(_State) ->
 check_otp_release(Min) ->
     Num = list_to_integer(erlang:system_info(otp_release)),
     if Num >= Min -> ok;
-       true -> {error, "OTP release too low"}
+        true -> {error, "OTP release too low"}
     end.
