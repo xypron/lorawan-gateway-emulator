@@ -141,8 +141,16 @@ code_change(_OldVsn, State, _Extra) ->
 %% @end
 %%--------------------------------------------------------------------
 greet() ->
-    io:format("~s~n", ["'stop' to exit"]),
+    io:format("~s~n", ["'quit' to exit"]),
     ok.
+
+
+help() ->
+    io:format(
+        "help - display this help~n" ++
+        "quit - exit the program~n" ++
+        "troff - stop trace output~n" ++
+        "tron - start trace output~n").
 
 %%--------------------------------------------------------------------
 %% @private
@@ -153,9 +161,12 @@ greet() ->
 %% @end
 %%--------------------------------------------------------------------
 command_line() ->
-    L = string:trim(io:get_line("> ")),
-    case L of
-        "stop" ->
+    Line = string:trim(io:get_line("> ")),
+    [Keyword | Arguments] = string:split(Line, " "),
+    case Keyword of
+        "help" ->
+            help();
+        "quit" ->
             io:format("stopping~n"),
             init:stop();
         "troff" ->
@@ -163,6 +174,6 @@ command_line() ->
         "tron" ->
             gen_server:call(lge_log, tron);
         _else ->
-            io:format("~s '~s'~n", ["syntax error:", L])
+            io:format("~s '~s'~n", ["syntax error:", Line])
     end,
     command_line().
