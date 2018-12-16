@@ -77,7 +77,7 @@
 %% @type
 %% gateway() = #gateway{eui = eui64(),
 %%                      name = nonempty_string(),
-%%                      server = {inet:ip_address(), inet:port()}
+%%                      server = nonempty_string()
 %%             }.
 %% A gateway.
 %% @end
@@ -85,18 +85,20 @@
 -record(gateway, {
         eui :: eui64(),
         name :: nonempty_string(),
-        server :: {inet:ip_address(), inet:port()}
+        server :: nonempty_string()
     }).
 
 %%--------------------------------------------------------------------
 %% @type
-%% server() = #server{ip_address = {inet:ip_address(), inet:port()},
-%%                    name = nonempty_string()
+%% server() = #server{name = nonempty_string(),
+%%                    ip = inet:ip_address(),
+%%                    port = :: inet:port()
 %%            }.
 %% A LoRaWAN server.
 %% @end
 %%--------------------------------------------------------------------
 -record(server, {
-        ip_address :: {inet:ip_address(), inet:port()},
-        name :: nonempty_string()
+        name :: nonempty_string(),
+        ip :: inet:ip_address(),
+        port :: inet:port()
     }).

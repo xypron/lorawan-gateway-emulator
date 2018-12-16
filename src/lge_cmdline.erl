@@ -22,6 +22,8 @@
          terminate/2,
          code_change/3]).
 
+-include("lge_db.hrl").
+
 -define(SERVER, ?MODULE).
 
 %%%===================================================================
@@ -132,6 +134,108 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+get_eui(Fieldname) ->
+    Value = list_to_binary(
+                string:to_upper(string:trim(io:get_line(Fieldname ++ ": ")))),
+    Hex = lge_util:hex_to_binary(Value),
+    case bit_size(Hex) of
+        64 ->
+            {ok, Hex};
+        _else ->
+            {error}
+    end.
+
+get_ip(Fieldname) ->
+    Value = list_to_binary(string:trim(io:get_line(Fieldname ++ ": "))),
+    List = string:split(Value, ".", all),
+    Tuple = lists:foldl(
+        fun(T, Acc) ->
+            erlang:append_element(Acc, list_to_integer(binary_to_list(T)))
+        end, {}, List),
+    case size(Tuple) of
+        4 ->
+            {ok, Tuple};
+        _else ->
+            {error}
+    end.
+
+get_port(Fieldname) ->
+    Value = list_to_binary(string:trim(io:get_line(Fieldname ++ ": "))),
+    Port = list_to_integer(binary_to_list(Value)),
+    if
+        (Port > 0) and (Port =< 16#FFFF) ->
+            {ok, Port};
+        true ->
+            {error}
+    end.
+
+get_string(Fieldname) ->
+    Value = string:trim(io:get_line(Fieldname ++ ": ")),
+    case string:length(Value) of
+        0 ->
+            {error};
+        _else ->
+            {ok, Value}
+    end.
+
+create([Keyword | _Arguments]) ->
+    case Keyword of
+    "gateway" ->
+        try
+            {ok, Eui} = get_eui("EUI-64"),
+            {ok, Name} = get_string("Name"),
+            {ok, Server} = get_string("Server"),
+            Gateway = #gateway{eui = Eui, name = Name, server = Server},
+            F = fun() ->
+                case mnesia:read({server, Server}) of
+                    [] ->
+                        io:format("Server ~p does not exist~n", [Server]),
+                        {error, unknown_server};
+                    _else ->
+                        mnesia:write(Gateway)
+                end
+            end,
+            case mnesia:activity(transaction, F) of
+                ok ->
+                    io:format("Gateway ~p created~n", [Name]);
+                _else ->
+                    io:format("Failed to create gateway~n")
+            end
+        catch
+            _ -> io:format("Invalid input~n")
+        end,
+        ok;
+    "server" ->
+        try
+            {ok, Name} = get_string("Name"),
+            {ok, Ip} = get_ip("Ip address"),
+            {ok, Port} = get_port("Port"),
+            Server = #server{name = Name, ip = Ip, port = Port},
+            F = fun() ->
+                mnesia:write(Server)
+            end,
+            case mnesia:activity(transaction, F) of
+                ok ->
+                    io:format("Server ~p created~n", [Name]);
+                _else ->
+                    io:format("Failed to create server~n")
+            end
+        catch
+            _ -> io:format("Invalid input~n")
+        end,
+        ok;
+    "otaa" -> ok;
+    "device" -> ok;
+        _else -> help(["create"])
+    end,
+    ok.
+
+delete([Keyword | _Arguments]) ->
+    ok.
+
+list([Keyword | _Arguments]) ->
+    ok.
+
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
@@ -144,13 +248,48 @@ greet() ->
     io:format("~s~n", ["'quit' to exit"]),
     ok.
 
-
-help() ->
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% Provide online help.
+%%
+%% @spec help([Keyword | Arguments]) -> ok
+%% @end
+%%--------------------------------------------------------------------
+help([]) ->
     io:format(
+        "create - create item~n" ++
+        "delete - delete item~n" ++
         "help - display this help~n" ++
+        "list - list items~n" ++
         "quit - exit the program~n" ++
         "troff - stop trace output~n" ++
-        "tron - start trace output~n").
+        "tron - start trace output~n"),
+    ok;
+help([Keyword | _Arguments]) ->
+    case Keyword of
+        "create" ->
+            io:format(
+                "create gateway~n" ++
+                "create server~n" ++
+                "create otaa~n" ++
+                "create device~n");
+        "delete" ->
+            io:format(
+                "delete gateway~n" ++
+                "delete server~n" ++
+                "delete otaa~n" ++
+                "delete device~n");
+        "list" ->
+            io:format(
+                "list gateways~n" ++
+                "list servers~n" ++
+                "list otaas~n" ++
+                "list devices~n");
+        _else ->
+            help([])
+    end,
+    ok.
 
 %%--------------------------------------------------------------------
 %% @private
@@ -164,8 +303,29 @@ command_line() ->
     Line = string:trim(io:get_line("> ")),
     [Keyword | Arguments] = string:split(Line, " "),
     case Keyword of
+        "create" ->
+            case Arguments of
+                [] ->
+                    help([Keyword]);
+                _else ->
+                    create(Arguments)
+            end;
+        "delete" ->
+            case Arguments of
+                [] ->
+                    help([Keyword]);
+                _else ->
+                    delete(Arguments)
+            end;
         "help" ->
-            help();
+            help(Arguments);
+        "list" ->
+            case Arguments of
+                [] ->
+                    help([Keyword]);
+                _else ->
+                    list(Arguments)
+            end;
         "quit" ->
             io:format("stopping~n"),
             init:stop();
@@ -174,6 +334,6 @@ command_line() ->
         "tron" ->
             gen_server:call(lge_log, tron);
         _else ->
-            io:format("~s '~s'~n", ["syntax error:", Line])
+            help([])
     end,
     command_line().

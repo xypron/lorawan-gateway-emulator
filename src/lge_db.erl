@@ -37,19 +37,19 @@ create_tables() ->
     ok = mnesia:start(),
     % Create the tables
     lists:foreach(fun({T, A}) -> create_table(T, A) end, [
-        {servers, [
+        {server, [
                 {attributes, record_info(fields, server)},
                 {disc_copies, [node()]}
             ]},
-        {gateways, [
+        {gateway, [
                 {attributes, record_info(fields, gateway)},
                 {disc_copies, [node()]}
             ]},
-        {otaas, [
+        {otaa, [
                 {attributes, record_info(fields, otaa)},
                 {disc_copies, [node()]}
             ]},
-        {devices, [
+        {device, [
                 {attributes, record_info(fields, device)},
                 {disc_copies, [node()]}
             ]}
